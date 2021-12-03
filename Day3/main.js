@@ -1,9 +1,10 @@
 const fs = require('fs');
 let queue = [];
-let gammaRate = [];
-let epsilonRate = [];
-let powerConsumption = 0;
 let values = {};
+let oxygenRating = 0;
+let CO2Rating = 0;
+let lifeSupport = 0;
+let bitCriteria = 0;
 
 setup = (col) => {
     let dataFile = fs.createReadStream('data.data', { encoding: 'utf8', fd: null });
@@ -23,30 +24,19 @@ setup = (col) => {
 
     dataFile.on('end', function () {
         findFNumber(col, parseInt(queue[col]));
-        
-        if(values[col].zeros > values[col].ones){
-            gammaRate.push(0)
-            epsilonRate.push(1)
-        }
-        if(values[col].zeros < values[col].ones){
-            gammaRate.push(1)
-            epsilonRate.push(0)
-        }
 
-        if(col === 11){
-            gammaRate = parseInt(gammaRate.join(''),2)
-            epsilonRate = parseInt(epsilonRate.join(''),2)
+        decide(col)
 
-            powerConsumption = gammaRate*epsilonRate;
-            console.log(powerConsumption)
+        if (col === 11) {
+            console.log(lifeSupport)
         }
     });
 
 }
 
 findFNumber = (position, element) => {
-    if(values[position] == undefined){
-        values[position] = {"zeros": 0, "ones":0};
+    if (values[position] == undefined) {
+        values[position] = { "zeros": 0, "ones": 0 };
     }
 
     if (element === 0) {
@@ -56,8 +46,20 @@ findFNumber = (position, element) => {
     }
 }
 
-let i=0
-while(i<12){
-    setup(i);
-    i++;
+decide = (position) => {
+    if (values[position].zeros > values[position].ones) {
+        console.log("Zero is the bit rate")
+        bitCriteria = 0;
+    }else {
+        console.log("One is the bit rate")
+        bitCriteria = 1;
+    }
 }
+
+const promise = new Promise((res, rej) => {
+    let i = 0
+    while (i < 12) {
+        setup(i);
+        i++;
+    }
+});
