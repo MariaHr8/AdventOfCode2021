@@ -3,7 +3,7 @@ let input_buffer = [];
 let queue = [];
 let three_measurement = 0;
 
-setup =  () => {
+setup = () => {
     let dataFile = fs.createReadStream(`submarine.data`, { encoding: 'utf8', fd: null });
 
     dataFile.on('readable', function () {
