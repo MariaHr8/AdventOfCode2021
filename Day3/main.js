@@ -1,45 +1,104 @@
 const fs = require('fs');
-let queue = [];
 let values = {};
+let globalArr = [];
 let oxygenRating = 0;
 let CO2Rating = 0;
 let lifeSupport = 0;
-let bitCriteria = 0;
+let objectBits = {};
+// 3667994 too low
 
-setup = (col) => {
+setup = (i) => {
     let dataFile = fs.createReadStream('data.data', { encoding: 'utf8', fd: null });
-
     dataFile.on('readable', function () {
         let chunk;
-        while (null !== (chunk = dataFile.read(1))) {
-            if (chunk[0] === "\n") {
-                queue = queue.filter((x) => { return x != "\r" }).join('');
-                findFNumber(col, parseInt(queue[col]));
-                queue = [];
-            } else {
-                queue.push(chunk);
+        // finding the bitCriterias
+        while (null !== (chunk = dataFile.read(14))) {
+            chunkArr = chunk.split('').filter(x => x != '\r').filter(x => x != '\n');
+            globalArr.push(chunkArr.join(''))
+        }
+
+        if (globalArr.length === 1000) {
+            let arr = []
+
+            // find bits in every row at index 0
+            globalArr.forEach(row => {
+                findFNumber(0, row[0])
+            });
+
+            // decide the bit criteria
+            decide(i)
+
+            // leave only rows with the criteria at index 0
+            arr = globalArr.filter(x => x[0] == objectBits[0].bitCriteria)
+
+            i++
+            //for 1-12
+            while (arr.length != 1) {
+                globalArr.forEach(row => {
+                    findFNumber(i, row[i])
+                });
+
+                decide(i)
+                arr = arr.filter(x => x[i] == objectBits[i].bitCriteria)
+                i++
             }
+            console.log(arr)
+
+            oxygenRating = Number.parseInt(arr, 2)
+            console.log(oxygenRating) //2849
+
+            ///////////reset values
+            arr = []
+            objectBits = {};
+            values = {}
+            i = 0
+
+            /////////////// find co2
+            // find bits in every row at index 0
+            globalArr.forEach(row => {
+                findFNumber(0, row[0])
+            });
+
+            // decide the bit criteria
+            decide(0)
+
+            // leave only rows with the criteria at index 0
+            arr = globalArr.filter(x => x[0] != objectBits[0].bitCriteria)
+
+            i++
+            //for 1-12
+            while (arr.length != 1) {
+                globalArr.forEach(row => {
+                    findFNumber(i, row[i])
+                });
+
+                decide(i)
+                arr = arr.filter(x => x[i] != objectBits[i].bitCriteria)
+                i++
+            }
+
+            console.log(arr)
+
+            CO2Rating = Number.parseInt(arr, 2);
+            console.log(CO2Rating)
+
+            console.log("lifeSupport = " + (CO2Rating * oxygenRating))
         }
     });
 
     dataFile.on('end', function () {
-        findFNumber(col, parseInt(queue[col]));
+        //console.log(values)
 
-        decide(col)
-
-        if (col === 11) {
-            console.log(lifeSupport)
-        }
+        console.log("End Reached")
     });
-
 }
 
 findFNumber = (position, element) => {
-    if (values[position] == undefined) {
+    if (!values[position]) {
         values[position] = { "zeros": 0, "ones": 0 };
     }
 
-    if (element === 0) {
+    if (element == 0) {
         values[position].zeros += 1;
     } else {
         values[position].ones += 1;
@@ -48,18 +107,12 @@ findFNumber = (position, element) => {
 
 decide = (position) => {
     if (values[position].zeros > values[position].ones) {
-        console.log("Zero is the bit rate")
-        bitCriteria = 0;
-    }else {
-        console.log("One is the bit rate")
-        bitCriteria = 1;
+        if (!objectBits[position]) objectBits[position] = { "bitCriteria": 0 }
+    } else {
+        if (!objectBits[position]) objectBits[position] = { "bitCriteria": 0 }
+        objectBits[position].bitCriteria = 1
     }
 }
 
-const promise = new Promise((res, rej) => {
-    let i = 0
-    while (i < 12) {
-        setup(i);
-        i++;
-    }
-});
+
+setup(0);
